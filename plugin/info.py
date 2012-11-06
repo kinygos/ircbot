@@ -3,7 +3,7 @@ import collections
 
 def colon_help(bot, conn, event):
     nickname = event.source().split('!', 1)[0]
-    conn.privmsg(nickname, "{} => https://github.com/husio/ircbot".foramt(bot.version))
+    conn.privmsg(nickname, "{} => https://github.com/husio/ircbot".format(bot.version))
     conn.privmsg(nickname, "type :plugins for complete plugins list")
 
 def colon_plugins(bot, conn, event):
