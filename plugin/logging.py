@@ -7,6 +7,10 @@ class Storage:
     def __init__(self, db_path):
         self.db_path = db_path
         self.connection = None
+        self.ensure_table_exist()
+
+    def ensure_table_exist(self):
+        pass
 
     def connection_new(self):
         if self.connection:
@@ -35,8 +39,14 @@ class Message:
     def __init__(self, event):
         self.event = event
 
+    def as_insert_sql(self):
+        return ''
 
+
+storage = Storage(':memory:')
 
 @helpers.events('pubmsg')
 def log(bot, conn, event):
-    pass
+    msg = Message(event)
+    with storage as c:
+        c.execute(msg.as_insert_sql())

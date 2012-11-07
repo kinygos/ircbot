@@ -35,13 +35,14 @@ class PluginManager:
         success = 0
         fail = 0
         self.handlers.clear()
+        # before reloading plugins, make sure we have fresh version of helpers
+        sys.modules.pop('plugin.helpers', None)
         for fdname in os.listdir(plugdir):
             if not fdname.endswith('.py'):
                 continue
             mod_name = fdname.rsplit('.', 1)[0]
             import_name = 'plugin.' + mod_name
-            if import_name in sys.modules:
-                del sys.modules[import_name]
+            sys.modules.pop(import_name, None)
             try:
                 plugin = importlib.import_module(import_name)
             except Exception as e:
