@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 
 from . import helpers
@@ -10,7 +11,17 @@ class Storage:
         self.ensure_table_exist()
 
     def ensure_table_exist(self):
-        pass
+        with self as c:
+            c.execute("""
+CREATE TABLE IF NOT EXISTS messages(
+    id INTEGER PRIMARY KEY,
+    created DATE,
+    event_type TEXT,
+    source TEXT,
+    target TEXT,
+    argument TEXT
+)
+            """)
 
     def connection_new(self):
         if self.connection:
@@ -24,7 +35,7 @@ class Storage:
         if commit:
             self.connection.commit()
         else:
-            self._connection.rollback()
+            self.connection.rollback()
         self.connection.close()
         self.connection = None
 
@@ -37,16 +48,25 @@ class Storage:
 
 class Message:
     def __init__(self, event):
+        self.now = datetime.datetime.now()
         self.event = event
 
     def as_insert_sql(self):
-        return ''
+        e = self.event
+        if e.arguments():
+            argument = e.arguments()[0]
+        else:
+            argument = ''
+        return '''
+INSERT INTO messages (created, event_type, source, target, argument)
+        VALUES (?, ?, ?, ?, ?)
+        ''', (self.now, e.eventtype(), e.source(), e.target(), argument)
 
 
-storage = Storage(':memory:')
+storage = Storage('/tmp/irclogs.sqlite3.db')
 
-@helpers.events('pubmsg')
+@helpers.events('pubmsg', 'privmsg')
 def log(bot, conn, event):
     msg = Message(event)
     with storage as c:
-        c.execute(msg.as_insert_sql())
+        c.execute(*msg.as_insert_sql())
