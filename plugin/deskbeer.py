@@ -1,5 +1,7 @@
 import datetime
 
+from . import helpers
+
 def format_time_left(now, deskbeer_time):
     tdiff = now - deskbeer_time
     diff_sec = int(round(abs(tdiff.days * 86400 + tdiff.seconds)))
@@ -37,8 +39,6 @@ def deskbeer_message():
         return "Deskbeer needs to be aquired in {}".format(time_left)
     return "Why are you here on the weekend?"
 
-def dot_deskbeer(bot, conn, event):
-    conn.privmsg(event.target(), deskbeer_message())
-
-def colon_deskbeer(bot, conn, event):
+@helpers.commands('deskbeer')
+def deskbeer(bot, conn, event):
     conn.privmsg(event.target(), deskbeer_message())

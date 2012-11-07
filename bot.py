@@ -16,45 +16,65 @@ class PluginManager:
         self.handlers = collections.defaultdict(list)
 
     def install_plugin(self, plugin):
+        empty = ()
+
         for attr_name in dir(plugin):
             if attr_name.startswith('_'):
                 continue
             attr = getattr(plugin, attr_name)
-            if isinstance(attr, collections.Callable):
-                self.handlers[attr_name].append(attr)
+            if not isinstance(attr, collections.Callable):
+                continue
+            for ev_name in getattr(attr, 'events', empty):
+                self.handlers['on_' + ev_name].append(attr)
+            for cmd_name in getattr(attr, 'commands', empty):
+                self.handlers['cmd_' + cmd_name].append(attr)
 
     def import_plugins(self):
         plugdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                 'plugin')
+        success = 0
+        fail = 0
+        self.handlers.clear()
         for fdname in os.listdir(plugdir):
             if not fdname.endswith('.py'):
                 continue
             mod_name = fdname.rsplit('.', 1)[0]
+            import_name = 'plugin.' + mod_name
+            if import_name in sys.modules:
+                del sys.modules[import_name]
             try:
-                plugin = importlib.import_module('plugin.' + mod_name)
+                plugin = importlib.import_module(import_name)
             except ImportError as e:
                 print("Cannot import {} plugin: {}".format(mod_name, e))
+                fail += 1
                 continue
             self.install_plugin(plugin)
+            success += 1
+        return (success, fail)
 
     def dispatch(self, bot, c, e):
         eventtype = e.eventtype()
         handlers = self.handlers.get('on_' + eventtype, ())
         for handler in handlers:
-            handler(bot, c, e)
+            try:
+                handler(bot, c, e)
+            except Exception as e:
+                print("Plugin error: {}.{} :: {}".format(
+                    handler.__module__, handler.__name__, e))
 
         arguments = e.arguments()
         if not arguments:
             return
-        if arguments[0].startswith('.'):
-            cmd = 'dot_' + arguments[0].split(' ', 1)[0][1:]
-        elif arguments[0].startswith(':'):
-            cmd = 'colon_' + arguments[0].split(' ', 1)[0][1:]
-        else:
+        if arguments[0][0] not in ('.', ':'):
             return
+        cmd = 'cmd_' + arguments[0].split(' ', 1)[0][1:]
         handlers = self.handlers.get(cmd, ())
         for handler in handlers:
-            handler(bot, c, e)
+            try:
+                handler(bot, c, e)
+            except Exception as e:
+                print("Plugin error: {}.{} :: {}".format(
+                    handler.__module__, handler.__name__, e))
 
 
 class Bot(SingleServerIRCBot):
@@ -64,7 +84,8 @@ class Bot(SingleServerIRCBot):
         super(Bot, self).__init__([(server, port)], nickname, nickname)
         self._channels = channels
         self.pmanager = PluginManager()
-        self.pmanager.import_plugins()
+        (success, fails) = self.pmanager.import_plugins()
+        print("Pluings loaded ({} success, {} fail)".format(success, fails))
 
     def _dispatcher(self, c, e):
         super(SingleServerIRCBot, self)._dispatcher(c, e)

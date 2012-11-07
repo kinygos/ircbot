@@ -3,6 +3,8 @@ import re
 
 import lxml.html
 
+from . import helpers
+
 
 url_rx = re.compile(r'\b(http[s]?://\S+)[,.]?\b')
 
@@ -15,6 +17,7 @@ def page_title(url, title_callback):
         title = "no title found"
     title_callback("{} => {}".format(url, title))
 
+@helpers.commands('title')
 def last_url_title(bot, conn, event):
     if not last_url:
         return
@@ -25,6 +28,7 @@ def last_url_title(bot, conn, event):
     t = threading.Thread(target=page_title, args=(last_url, send_title))
     t.start()
 
+@helpers.events('pubmsg', 'privmsg')
 def remember_url(bot, conn, event):
     arguments = event.arguments()
     if not arguments:
@@ -37,14 +41,4 @@ def remember_url(bot, conn, event):
     except StopIteration:
         pass
 
-def on_pubmsg(bot, conn, event):
-    remember_url(bot, conn, event)
 
-def on_privmsg(bot, conn, event):
-    remember_url(bot, conn, event)
-
-def colon_title(bot, conn, event):
-    last_url_title(bot, conn, event)
-
-def dot_title(bot, conn, event):
-    last_url_title(bot, conn, event)
