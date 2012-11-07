@@ -27,4 +27,7 @@ def urbandict(term):
 @helpers.commands('urb', 'urbandict')
 def urb(bot, conn, event):
     term = event.arguments()[0].split(' ', 1)[1]
-    conn.privmsg(event.target(), urbandict(term))
+    res = urbandict(term)
+    if len(res) > 450:
+        res = res[:450] + '...'
+    conn.privmsg(event.target(), res)
