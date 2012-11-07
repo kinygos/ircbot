@@ -44,8 +44,8 @@ class PluginManager:
                 del sys.modules[import_name]
             try:
                 plugin = importlib.import_module(import_name)
-            except ImportError as e:
-                print("Cannot import {} plugin: {}".format(mod_name, e))
+            except Exception as e:
+                print("Cannot import '{}' plugin: {}".format(mod_name, e))
                 fail += 1
                 continue
             self.install_plugin(plugin)
