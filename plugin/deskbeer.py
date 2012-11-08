@@ -40,5 +40,6 @@ def deskbeer_message():
     return "Why are you here on the weekend?"
 
 @helpers.commands('deskbeer')
+@helpers.throttling(5, 2)
 def deskbeer(bot, conn, event):
     conn.privmsg(event.target(), deskbeer_message())

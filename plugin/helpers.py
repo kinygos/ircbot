@@ -1,3 +1,7 @@
+import time
+import functools
+
+
 def commands(*commands):
     def wrapper(func):
         func.commands = commands
@@ -9,6 +13,34 @@ def events(*events):
         func.events = events
         return func
     return wrapper
+
+throttling_break = object()
+
+def throttling(throttl_time, max_call_count=1):
+    def decorator(func):
+        func._throttling_time = time.time() - 10000
+        func._throttling_count = 0
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            last_call = getattr(func, '_throttling_time', None)
+            call_count = getattr(func, '_throttling_count', None)
+
+            tdiff = now - last_call
+            if tdiff > throttl_time:
+                func._throttling_time = now
+                func._throttling_count = 0
+            else:
+                if call_count >= max_call_count:
+                    return throttling_break
+
+            func._throttling_count += 1
+            return func(*args, **kwargs)
+
+        return wrapper
+    return decorator
+
 
 COLORS = {
         'aqua': 11,

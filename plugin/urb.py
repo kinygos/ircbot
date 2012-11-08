@@ -24,6 +24,7 @@ def urbandict(term):
         return 'You done made up {}'.format(term)
     return '{} - {}'.format(term, definition)
 
+@helpers.throttling(5, 2)
 @helpers.commands('urb', 'urbandict')
 def urb(bot, conn, event):
     term = event.arguments()[0].split(' ', 1)[1]

@@ -53,18 +53,18 @@ class PluginManager:
             success += 1
         return (success, fail)
 
-    def dispatch(self, bot, c, e):
-        eventtype = e.eventtype()
+    def dispatch(self, bot, c, ev):
+        eventtype = ev.eventtype()
         handlers = self.handlers.get('on_' + eventtype, ())
         for handler in handlers:
             try:
-                handler(bot, c, e)
-            except Exception as e:
+                handler(bot, c, ev)
+            except Exception as exc:
                 print("Plugin error: {}.{} :: {}".format(
-                    handler.__module__, handler.__name__, e))
+                    handler.__module__, handler.__name__, exc))
 
-        arguments = e.arguments()
-        if not arguments:
+        arguments = ev.arguments()
+        if not arguments or not arguments[0]:
             return
         if arguments[0][0] not in ('.', ':'):
             return
@@ -72,10 +72,10 @@ class PluginManager:
         handlers = self.handlers.get(cmd, ())
         for handler in handlers:
             try:
-                handler(bot, c, e)
-            except Exception as e:
+                handler(bot, c, ev)
+            except Exception as exc:
                 print("Plugin error: {}.{} :: {}".format(
-                    handler.__module__, handler.__name__, e))
+                    handler.__module__, handler.__name__, exc))
 
 
 class Bot(SingleServerIRCBot):
