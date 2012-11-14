@@ -1,5 +1,9 @@
 import time
+import dbm
 import functools
+import os
+import weakref
+
 
 
 def commands(*commands):
@@ -76,3 +80,22 @@ def color(c, message=''):
     if c in COLORS:
         c = COLORS[c]
     return "{}{}{}".format(chr(3), c, message)
+
+
+class Storage:
+    db_dir = os.path.dirname(os.path.abspath(__file__))
+
+    def __init__(self, scope):
+        dbname = 'storage.{}.db'.format(scope)
+        self.db_path = os.path.join(self.db_dir, dbname)
+        self._db = None
+
+    def __enter__(self):
+        if self._db:
+            raise Exception("Database already in use")
+        self._db = dbm.open(self.db_path, 'c')
+        return self._db
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._db.close()
+        self._db = None
